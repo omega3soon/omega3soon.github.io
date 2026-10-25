@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>一日 ω 天秤</title>
+<meta name="description" content="選出你的一天四餐，看看 ω-3 和 ω-6 天秤往哪邊倒！新陳生物營養小遊戲。">
+<meta property="og:title" content="一日 ω 天秤｜新陳生物營養小遊戲">
+<meta property="og:description" content="選出你的一天四餐，看看 ω-3 和 ω-6 天秤往哪邊倒，再用細胞時光機看看每天的習慣怎麼改變身體。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0f4f57">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}</style>
+<style>
+/* Layout: one-screen booth game — meal progress on top, a swinging ω balance in the middle, a tray of food cards at the bottom.
+   Single deliberate look (bright market-stall palette), so colors are set explicitly rather than themed. */
+:root{
+  --sky:#bfe9e4; --sky2:#e8f7ef; --lagoon:#0f4f57; --ink:#16343a; --ink-soft:#4d6b70;
+  --w3:#2f9e62; --w3-soft:#d4eedb; --w6:#ec6a2c; --w6-soft:#fde3d4; --sun:#ffc23d; --wood:#a0683d; --wood-d:#6b4430;
+  --paper:#fffdf6; --line:#f0dcae; --silent:#7d8f99;
+  --font:"Huninn","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--sky);color:var(--ink);font-family:var(--font);font-size:16px;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font-family:var(--font);border:0;cursor:pointer;color:inherit;font-size:16px;background:none}
+button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:400;text-wrap:balance}
+p{margin:0;line-height:1.6}
+.app{height:100%;max-width:620px;margin:0 auto;display:flex;flex-direction:column;position:relative;background:linear-gradient(var(--sky),var(--sky2) 60%)}
+
+/* top bar */
+.top{flex:none;display:flex;align-items:center;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px))}
+.meals{display:flex;gap:6px;flex:1;min-width:0}
+.meal{flex:1;text-align:center;font-size:13.5px;padding:5px 2px;border-radius:999px;background:rgba(255,255,255,.55);color:var(--ink-soft);white-space:nowrap}
+.meal.now{background:var(--lagoon);color:#fff}
+.meal.done{background:#fff;color:var(--w3)}
+.mute{width:38px;height:38px;border-radius:50%;background:#fff;font-size:17px;flex:none;box-shadow:0 2px 0 rgba(15,79,87,.25)}
+
+/* scale stage */
+.stage{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;gap:2px}
+.stage>svg{display:block;width:100%;flex:1;min-height:0;max-height:300px;margin:0 auto}
+.bubble{flex:none;padding:2px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;align-items:flex-start;pointer-events:none}
+.bubble .mascot{width:46px;height:46px;flex:none}
+.bubble p{background:#fff;border-radius:4px 16px 16px 16px;padding:7px 12px;font-size:14.5px;line-height:1.5;box-shadow:0 2px 0 rgba(15,79,87,.18);transition:opacity .25s;min-width:0}
+
+/* gauge */
+.gauge{flex:none;padding:2px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:4px}
+.g-lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft)}
+.bar{height:22px;border-radius:12px;position:relative;box-shadow:0 0 0 2px #fff,0 3px 0 2px rgba(15,79,87,.25);
+  background:linear-gradient(90deg,var(--silent) 0 12%,#9fd8ad 12% 25%,var(--w3) 25% 75%,#f5a15b 75% 90%,var(--w6) 90%)}
+.bar::after{content:"黃金比例 1:1～4:1";position:absolute;left:25%;width:50%;top:0;bottom:0;display:grid;place-items:center;font-size:13px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+.needle{position:absolute;top:-6px;width:10px;height:34px;border-radius:5px;background:#fff;box-shadow:0 0 0 2px var(--ink);transform:translateX(-5px);left:50%}
+.needle[hidden]{display:none}
+.readout{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px}
+.readout b{font-size:20px;font-weight:400;font-variant-numeric:tabular-nums}
+.zone{font-size:14px;padding:1px 10px;border-radius:999px;background:#fff}
+
+/* plate + tray */
+.panel{flex:none;background:var(--paper);border-top:4px solid var(--line);border-radius:20px 20px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 14px rgba(15,79,87,.08)}
+.ask{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ask h2{font-size:19px;color:var(--lagoon)}
+.ask span{font-size:13.5px;color:var(--ink-soft);white-space:nowrap}
+.tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:33vh;overflow-y:auto;padding:2px;-webkit-mask-image:linear-gradient(#000 88%,transparent);mask-image:linear-gradient(#000 88%,transparent);padding-bottom:18px}
+@media (min-width:560px){.tray{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.food{background:#fff;border:2px solid var(--line);border-radius:14px;padding:7px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;box-shadow:0 3px 0 var(--line);transition:transform .12s}
+.food:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.food .e{font-size:30px;line-height:1.1}
+.food .n{font-size:14.5px;line-height:1.25;text-align:center}
+.food .bars{display:flex;flex-direction:column;gap:2px;width:78%}
+.food .bars i{display:block;height:6px;border-radius:3px;min-width:4px}
+.food .bars .a{background:var(--w3)}.food .bars .b{background:var(--w6)}
+.food .rt{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.food .badge{position:absolute;top:4px;right:5px;font-size:11px;background:var(--w6-soft);color:#a8401a;border-radius:6px;padding:0 5px}
+.food .badge.cold{background:var(--w3-soft);color:#24653a}
+.food.picked{border-color:var(--lagoon);background:#e6f4f1}
+.food.picked::after{content:"✓";position:absolute;top:2px;left:6px;color:var(--lagoon);font-size:16px}
+.food[disabled]{opacity:.4}
+.legend{display:flex;gap:14px;justify-content:center;font-size:12.5px;color:var(--ink-soft)}
+.legend i{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:5px;vertical-align:2px}
+.go{background:linear-gradient(#ffd25e,#f59a1b);color:#fff;font-weight:700;text-shadow:0 1px 0 #a85d00;border:3px solid #fff;border-radius:16px;padding:12px;font-size:19px;box-shadow:0 4px 0 #a85d00}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 #a85d00}
+.go[disabled]{opacity:.45;filter:grayscale(.5)}
+.go.green{background:linear-gradient(#8fe063,#4cb52f);text-shadow:0 1px 0 #2d7a1a;box-shadow:0 4px 0 #2d7a1a}
+
+/* overlays */
+.ov{position:absolute;inset:0;z-index:30;background:linear-gradient(var(--sky),var(--sky2) 55%);overflow-y:auto;padding:22px max(18px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.ov>*{flex-shrink:0}
+.ov.dim{background:rgba(10,40,45,.5);justify-content:center}
+.ov h1{font-size:42px;line-height:1.1;color:var(--lagoon)}
+.ov h1 small{display:block;font-size:18px;color:var(--w6);margin-bottom:6px}
+.card{background:var(--paper);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;background:#fff;border-radius:14px;padding:10px 12px;font-size:15px;line-height:1.5}
+.step b.num{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--lagoon);color:#fff;font-weight:400}
+.small{font-size:12.5px;color:var(--ink-soft);line-height:1.55}
+.hero-m{width:92px;height:92px;align-self:center}
+.verdict{font-size:26px;color:var(--lagoon);text-align:center}
+.ratio-big{font-size:46px;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.ratio-big span{font-size:16px;display:block;color:var(--ink-soft);margin-top:6px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.compare div{background:#fff;border-radius:12px;padding:8px 10px;font-size:13px;color:var(--ink-soft);text-align:center}
+.compare b{display:block;font-size:22px;font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums}
+.q{font-size:20px;line-height:1.45;color:var(--lagoon)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;text-align:left;font-size:17px;box-shadow:0 3px 0 var(--line)}
+.opt.right{border-color:var(--w3);background:var(--w3-soft)}
+.opt.wrong{border-color:var(--w6);background:var(--w6-soft)}
+.qprog{display:flex;gap:6px;justify-content:center}
+.qprog i{width:30px;height:6px;border-radius:3px;background:rgba(255,255,255,.7)}
+.qprog i.on{background:var(--lagoon)}
+.explain{font-size:15px;line-height:1.6;background:#fff;border-radius:12px;padding:10px 12px}
+.stars{font-size:40px;letter-spacing:8px;text-align:center;color:var(--sun)}
+.stars .off{color:#d8e2e0}
+.code{font-size:28px;letter-spacing:.12em;color:var(--w6);text-align:center;font-variant-numeric:tabular-nums}
+.redeem{background:var(--sky2);color:var(--ink-soft);border-radius:12px;padding:10px;font-size:15px}
+.redeem.done{background:var(--w3-soft);color:#24653a}
+.habits{font-size:15px;line-height:1.75}
+.tm-title{font-size:28px;color:var(--lagoon);text-align:center}
+.mem{background:#fff;border-radius:18px;padding:8px 6px;display:flex;flex-direction:column;gap:4px}
+.mem svg{width:100%;height:auto;display:block}
+.cells{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:8px 6px;justify-items:center}
+.rc{width:100%;max-width:46px;aspect-ratio:1;border-radius:50%;position:relative;transition:background-color .4s;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+.rc::after{content:"";position:absolute;inset:28%;border-radius:50%;background:rgba(255,255,255,.35)}
+.rc.pop{animation:pop .45s ease-out}
+@keyframes pop{0%{transform:scale(.2)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.mem-lbl i.dot{width:12px;height:12px;border-radius:50%;vertical-align:-1px}
+.mem-lbl{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft)}
+.mem-lbl i{display:inline-block;width:16px;height:4px;border-radius:2px;margin-right:5px;vertical-align:3px}
+.clock{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.clock div{background:#fff;border-radius:12px;padding:8px 10px;text-align:center;font-size:12.5px;color:var(--ink-soft)}
+.clock b{display:block;font-size:26px;font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums}
+.rbc{height:8px;border-radius:4px;background:var(--sky2);overflow:hidden;margin-top:4px}
+.rbc i{display:block;height:100%;width:0;background:#e05252}
+.caption{min-height:3.4em;font-size:16px;line-height:1.6;text-align:center;background:#fff7dc;border:2px solid var(--sun);border-radius:14px;padding:10px 12px}
+.cmp{display:flex;flex-direction:column;gap:6px}
+.cmp div{background:#fff;border-radius:12px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:13.5px;position:relative;overflow:hidden}
+.cmp span{color:var(--ink-soft)}.cmp b{font-weight:400;font-size:16px}
+.cmp em{grid-column:1/-1;font-style:normal;color:#a8401a;font-size:13.5px}
+.cmp i{position:absolute;left:0;bottom:0;height:4px;background:var(--w6)}
+.tip{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));margin:0 auto;max-width:560px;box-sizing:border-box;z-index:60;background:#fff;border:3px solid var(--sun);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:48px 1fr;gap:10px;box-shadow:0 10px 30px rgba(10,40,45,.3);animation:pop .25s ease-out}
+.tip p{font-size:16px;line-height:1.65;margin-bottom:10px}
+.tip .go{width:100%;padding:9px;font-size:17px}
+.tip-m{width:48px;height:48px}
+@keyframes pop{from{transform:translateY(20px);opacity:0}}
+.skip{margin-top:6px;font-size:12.5px;color:var(--ink-soft);text-decoration:underline;background:none}
+.scen button.pulse{animation:pulseB 1s ease-in-out infinite;border-color:var(--sun)}
+.scen button[disabled]{opacity:.4}
+@keyframes pulseB{50%{box-shadow:0 0 0 6px rgba(255,194,61,.45)}}
+.scen{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scen button{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 6px;font-size:15.5px;line-height:1.35;box-shadow:0 3px 0 var(--line)}
+.scen button.on{border-color:var(--lagoon);background:#e6f4f1}
+.scen button small{display:block;font-size:12px;color:var(--ink-soft)}
+.key{background:#fff7dc;border:2px solid var(--sun);border-radius:14px;padding:10px 12px;font-size:15px;line-height:1.65;text-align:left}
+.key b.t{display:block;color:var(--wood-d);margin-bottom:2px}
+.float{position:absolute;transform:translate(-50%,-50%);font-size:15px;font-weight:700;white-space:nowrap;pointer-events:none;text-shadow:0 1px 0 #fff,0 0 3px #fff;animation:up 1.3s ease-out forwards}
+@keyframes up{to{transform:translate(-50%,-160%);opacity:0}}
+/* animated intro demo */
+.demo{background:var(--paper);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:8px;animation:rise .5s ease-out both}
+.demo-talk{display:flex;gap:10px;align-items:center}
+.demo-m{width:60px;height:60px;flex:none;cursor:pointer;animation:bob 2s ease-in-out infinite}
+.demo-m.jump{animation:jump .5s ease-out}
+.demo-say{background:#fff;border:2px solid var(--line);border-radius:4px 16px 16px 16px;padding:8px 12px;font-size:15.5px;line-height:1.55;min-height:3.2em;flex:1;min-width:0}
+#demoSvg{width:100%;height:auto;display:block;max-height:190px}
+.demo-try{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+.demo-try button{background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px 6px;font-size:15px;box-shadow:0 3px 0 var(--line)}
+.demo-try button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+#ovIntro .card{animation:rise .5s .25s ease-out both}
+#ovIntro .step{animation:rise .45s ease-out both}
+#ovIntro .step:nth-child(1){animation-delay:.5s}#ovIntro .step:nth-child(2){animation-delay:.7s}#ovIntro .step:nth-child(3){animation-delay:.9s}
+#startBtn{animation:breathe 1.6s ease-in-out infinite}
+@keyframes rise{from{transform:translateY(14px);opacity:.3}}
+@keyframes bob{50%{transform:translateY(-5px) rotate(4deg)}}
+@keyframes jump{30%{transform:translateY(-14px) scale(1.12)}}
+@keyframes breathe{50%{transform:scale(1.03)}}
+@media (min-width:700px) and (min-height:700px){
+  .food .e{font-size:38px}.food .n{font-size:16px}.ask h2{font-size:22px}.bubble p{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="meals" id="meals"></div>
+    <button class="mute" id="muteBtn" aria-label="音效開關">🔊</button>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="bubble"><svg class="mascot" viewBox="0 0 60 60" aria-hidden="true"><use href="#mascotShape"/></svg><p id="say">嗨！我是星星果小星，一起把一天的飲食放上天秤吧！</p></div>
+    <svg id="scale" viewBox="0 -10 360 260" aria-label="ω 天秤">
+      <defs>
+        <linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c08452"/><stop offset="1" stop-color="#8a5530"/></linearGradient>
+      </defs>
+      <ellipse cx="180" cy="238" rx="70" ry="8" fill="#0f4f57" opacity=".12"/>
+      <path d="M150 236 L210 236 L196 222 L164 222 Z" fill="url(#wood)"/>
+      <rect x="175" y="78" width="10" height="146" rx="4" fill="url(#wood)"/>
+      <g id="beam">
+        <rect x="46" y="72" width="268" height="12" rx="6" fill="url(#wood)"/>
+        <circle cx="52" cy="78" r="5" fill="#6b4430"/><circle cx="308" cy="78" r="5" fill="#6b4430"/>
+      </g>
+      <circle cx="180" cy="78" r="11" fill="#ffc23d" stroke="#6b4430" stroke-width="3"/>
+      <g id="panL"></g>
+      <g id="panR"></g>
+      <g id="beads"></g>
+    </svg>
+
+  </div>
+
+  <div class="gauge">
+    <div class="readout"><span>今天吃進去的 ω-6 : ω-3 約 <b id="ratio">—</b></span><span class="zone" id="zone">還沒吃東西</span></div>
+    <div class="bar"><span class="needle" id="needle" hidden></span></div>
+    <div class="g-lbl"><span>◀ ω-3 太多</span><span>ω-6 太多 ▶</span></div>
+  </div>
+
+  <section class="panel" id="panel">
+    <div class="ask"><h2 id="askTitle"></h2><span id="askSub"></span></div>
+    <div class="tray" id="tray"></div>
+    <div class="legend"><span><i style="background:var(--w3)"></i>ω-3</span><span><i style="background:var(--w6)"></i>ω-6</span><span>長條越長，含量越多</span></div>
+    <div style="display:flex;gap:8px"><button class="go" id="cellBtn" style="flex:1;background:linear-gradient(#8fd8e6,#3fa6bd);text-shadow:0 1px 0 #1d6575;box-shadow:0 4px 0 #1d6575" hidden>🧬 細胞時光機</button><button class="go" id="goBtn" style="flex:2" disabled>吃完這餐</button></div>
+  </section>
+
+  <!-- intro -->
+  <section class="ov" id="ovIntro">
+    <h1><small>新陳生物 × 營養小遊戲</small>一日 ω 天秤</h1>
+    <div class="demo">
+      <div class="demo-talk"><svg class="demo-m" id="demoM" viewBox="0 0 60 60" aria-label="小星"><use href="#mascotShape"/></svg><p class="demo-say" id="demoSay">嗨！我是星星果<b>小星</b>。點我一下！</p></div>
+      <svg id="demoSvg" viewBox="0 0 320 172" aria-label="天秤示範">
+        <ellipse cx="160" cy="146" rx="60" ry="5" fill="#0f4f57" opacity=".12"/>
+        <path d="M134 142 L186 142 L174 130 L146 130 Z" fill="#a0683d"/>
+        <rect x="156" y="40" width="8" height="92" rx="3" fill="#a0683d"/>
+        <g id="dBeam"><rect x="52" y="34" width="216" height="9" rx="4.5" fill="#a0683d"/></g>
+        <circle cx="160" cy="38" r="8" fill="#ffc23d" stroke="#6b4430" stroke-width="2.5"/>
+        <g id="dPanL"><line x1="0" y1="0" x2="-28" y2="46" stroke="#6b4430" stroke-width="1.6"/><line x1="0" y1="0" x2="28" y2="46" stroke="#6b4430" stroke-width="1.6"/><path d="M-36 45 Q0 68 36 45 Z" fill="#fff" stroke="#6b4430" stroke-width="2"/><text x="0" y="78" text-anchor="middle" font-size="11" fill="#2f9e62" font-family="Huninn,sans-serif">ω-3</text><text class="load" x="0" y="44" text-anchor="middle" font-size="20"></text></g>
+        <g id="dPanR"><line x1="0" y1="0" x2="-28" y2="46" stroke="#6b4430" stroke-width="1.6"/><line x1="0" y1="0" x2="28" y2="46" stroke="#6b4430" stroke-width="1.6"/><path d="M-36 45 Q0 68 36 45 Z" fill="#fff" stroke="#6b4430" stroke-width="2"/><text x="0" y="78" text-anchor="middle" font-size="11" fill="#ec6a2c" font-family="Huninn,sans-serif">ω-6</text><text class="load" x="0" y="44" text-anchor="middle" font-size="20"></text></g>
+        <text id="dFall" x="160" y="0" text-anchor="middle" font-size="26"></text>
+      </svg>
+      <div class="demo-try"><button id="tryFry">放上 🍗 炸雞</button><button id="tryFish">放上 🐟 鯖魚</button><button id="tryReset">↺ 清空</button></div>
+    </div>
+    <div class="card">
+      <p>每一樣食物都同時含有 <b style="color:var(--w3)">ω-3</b> 和 <b style="color:var(--w6)">ω-6</b>，只是多少不同。選出你平常的一天，看看天秤會往哪邊倒！</p>
+      <p class="key"><b class="t">先知道一件事</b>天秤算的是「吃進去的量」。身體裡的比例不會一餐就改變，要靠每天的飲食習慣，幾週到幾個月慢慢調整。</p>
+      <div class="steps">
+        <div class="step"><b class="num">1</b><span>從早餐到點心，點選你常吃的食物，放上天秤。</span></div>
+        <div class="step"><b class="num">2</b><span>一天結束後有 <b>2 次換菜機會</b>，試著把天秤拉回黃金比例。</span></div>
+        <div class="step"><b class="num">3</b><span>回答 4 個小問題，到攤位兌換試吃。</span></div>
+      </div>
+    </div>
+    <button class="go" id="startBtn">開始我的一天</button>
+    <p class="small">本遊戲為營養知識推廣，食物的 ω 數值為方便比較的相對指數，不是實際含量；內容不代表醫療建議，身體不適請諮詢醫師。</p>
+  </section>
+
+  <!-- meal summary -->
+  <section class="ov dim" id="ovMeal" hidden>
+    <div class="card" id="mealCard"></div>
+  </section>
+
+  <!-- cell time machine -->
+  <section class="ov" id="ovCell" style="z-index:40" hidden>
+    <p class="small" style="text-align:center">示意動畫・重要觀念</p>
+    <h2 class="tm-title">細胞時光機</h2>
+    <p style="text-align:center">細胞遇到病菌或受傷時，會從<b>細胞膜</b>的磷脂質上切下脂肪酸，再轉換成訊號。膜上存的是哪一種，就決定發出什麼訊號。發炎的工作是<b>清除病菌</b>，清完再<b>適時消退</b>，兩種都需要。</p>
+    <div class="mem">
+      <svg id="memSvg" viewBox="0 0 340 262" aria-label="細胞膜示意動畫"></svg>
+      <div class="mem-lbl"><span><i style="background:var(--w3)"></i>ω-3（EPA、DHA）→ 💧 消退訊號：幫忙關掉發炎</span><span><i style="background:var(--w6)"></i>ω-6（主要是 AA）→ 🔥 發炎訊號：清除病菌</span><span><i style="background:#b9c3c6"></i>其他脂肪酸</span></div>
+    </div>
+    <div class="clock">
+      <div><b id="dayNum">第 0 天</b>經過時間<div class="rbc"><i id="rbcBar"></i></div><span id="rbcTxt">紅血球換新 0%</span></div>
+      <div><b id="memRatio">—</b>細胞膜 ω-6 : ω-3</div>
+    </div>
+    <div class="caption" id="cellCap"></div>
+    <div class="cmp" id="cmp" hidden></div>
+    <button class="go" id="zapBtn">⚡ 刺激現在的細胞</button>
+    <div class="scen" id="scen" hidden>
+      <button id="scDaily">🗓 每天都照今天吃<small id="scDailySub"></small></button>
+      <button id="scOnce">1️⃣ 只吃今天一天<small>之後回到外食族的吃法</small></button>
+    </div>
+    <button class="go green" id="cellNext" disabled>我懂了，去答題</button>
+    <div class="tip" id="tip" hidden><svg class="tip-m" viewBox="0 0 60 60" aria-hidden="true"><use href="#mascotShape"/></svg><div><p id="tipTxt"></p><button class="go green" id="tipOk">知道了 →</button></div></div>
+    <p class="small" style="text-align:center">發炎是身體的保護反應，ω-6 也是必需脂肪酸。重點是兩種平衡，讓發炎該來時來、該消退時消退。</p>
+    <p class="small" style="text-align:center">印加果油的 ω-3 是植物性的 ALA，每天 10 ml 約提供 4 g。ALA 在體內可以轉換成 EPA，轉成 DHA 的量因人而異，男性比較少。每週搭配吃兩次魚，EPA、DHA 更完整。</p>
+  </section>
+
+  <!-- quiz -->
+  <section class="ov" id="ovQuiz" hidden></section>
+
+  <!-- result -->
+  <section class="ov" id="ovEnd" hidden></section>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="mascotShape" viewBox="0 0 60 60">
+      <path d="M30 3 C34 18 42 26 57 30 C42 34 34 42 30 57 C26 42 18 34 3 30 C18 26 26 18 30 3 Z" fill="#3f9a5c" stroke="#24653a" stroke-width="2"/>
+      <circle cx="30" cy="31" r="12" fill="#ffc23d"/>
+      <circle cx="25.5" cy="29" r="2" fill="#16343a"/><circle cx="34.5" cy="29" r="2" fill="#16343a"/>
+      <path d="M25.5 34 Q30 38 34.5 34" fill="none" stroke="#16343a" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="22.5" cy="33" r="2" fill="#ff9e9e" opacity=".8"/><circle cx="37.5" cy="33" r="2" fill="#ff9e9e" opacity=".8"/>
+    </symbol>
+  </svg>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+
+/* ============ DATA (relative game indices, not measured content) ============ */
+const MEALS=[
+  {n:'早餐',pick:3,ask:'早餐吃什麼？',items:[
+    {e:'🌯',n:'蛋餅',a:.3,b:4,t:'煎台常用大豆油，ω-6 偏多。'},
+    {e:'🥔',n:'炸薯餅',a:.2,b:6,fry:1,t:'油炸食物吸了不少油，ω-6 跟著上來。'},
+    {e:'🍙',n:'油條飯糰',a:.2,b:5,fry:1,t:'裡面的油條是炸的，ω-6 偏多。'},
+    {e:'🥞',n:'煎蘿蔔糕',a:.2,b:3,t:'煎的時候吃進鐵板上的油。'},
+    {e:'🥪',n:'鮪魚蛋吐司',a:.8,b:4,t:'鮪魚有一點 ω-3，但美乃滋多半是大豆油做的。'},
+    {e:'🥑',n:'酪梨吐司',a:.2,b:2,t:'酪梨的油脂以 ω-9 為主，影響不大。'},
+    {e:'🫘',n:'豆漿',a:.5,b:3.5,t:'黃豆的 ω-6 比 ω-3 多，但也有一點 ω-3。'},
+    {e:'🥛',n:'鮮奶',a:.1,b:.3,t:'牛奶的油脂兩種都很少。'},
+    {e:'☕',n:'咖啡拿鐵',a:.1,b:.3,t:'用鮮奶做的拿鐵，油脂兩種都很少，天秤幾乎不動。'},
+    {e:'🥤',n:'三合一咖啡',a:.1,b:2.5,t:'奶精多半是植物油做的，ω-6 比拿鐵多不少。'},
+    {e:'🫖',n:'黑咖啡',a:.02,b:.05,t:'黑咖啡幾乎沒有油脂。'},
+    {e:'🥚',n:'水煮蛋',a:.2,b:1,t:'水煮不加油，天秤幾乎不動。'},
+    {e:'🥣',n:'燕麥粥',a:.2,b:1.2,t:'原型穀物，油脂很少。'},
+    {e:'🍠',n:'蒸地瓜',a:.05,b:.2,t:'蒸的地瓜幾乎沒有油。'},
+    {e:'🍲',n:'白粥配醬菜',a:.02,b:.3,t:'清粥本身幾乎沒有油，醬菜也很少油。'},
+    {e:'🍳',n:'煎荷包蛋',a:.2,b:2.5,t:'蛋本身油不多，煎蛋的油決定了 ω-6 多寡。'},
+    {e:'🍞',n:'全麥吐司',a:.1,b:1,t:'全穀類油脂少，抹醬才是重點。'},
+    {e:'🌰',n:'核桃',a:2.5,b:10,t:'核桃兩種都多，是少數有植物性 ω-3 的堅果。'}]},
+  {n:'午餐',pick:3,ask:'午餐吃什麼？外食或自己煮都可以',items:[
+    {e:'🍗',n:'炸雞腿便當',a:.5,b:12,fry:1,t:'炸雞腿配上炒菜油，ω-6 一下子衝很高。'},
+    {e:'🍖',n:'炸排骨便當',a:.5,b:11,fry:1,t:'炸排骨裹粉吸油，ω-6 很高。'},
+    {e:'🥘',n:'滷肉飯',a:.3,b:4,t:'肥肉和油蔥酥，ω-6 偏多。'},
+    {e:'🍛',n:'炒飯',a:.3,b:5,t:'大火快炒要用不少油，ω-6 偏多。'},
+    {e:'🦪',n:'蚵仔煎',a:1.2,b:6,t:'蚵仔有一點 ω-3，但煎的油和醬讓 ω-6 更多。'},
+    {e:'🥟',n:'水餃',a:.3,b:3,t:'絞肉內餡有油脂，煮的比煎的少油。'},
+    {e:'🍜',n:'牛肉麵',a:.3,b:2,t:'湯頭的牛油以飽和脂肪為主，ω 影響中等。'},
+    {e:'🐟',n:'鯖魚便當',a:6,b:3,t:'鯖魚是青背魚，ω-3（EPA、DHA）很豐富。'},
+    {e:'🐠',n:'鹽烤秋刀魚',a:5,b:1.5,t:'烤魚不用多加油，ω-3 很漂亮。'},
+    {e:'🥗',n:'雞胸肉沙拉',a:.5,b:2,t:'雞胸肉很瘦，醬料決定了 ω-6 多寡。'},
+    {e:'🥬',n:'炒青菜',a:.4,b:5,t:'青菜很好，但大火快炒的沙拉油 ω-6 偏多。'},
+    {e:'🍚',n:'白飯',a:.02,b:.2,t:'白米飯幾乎沒有油脂，天秤幾乎不動。'},
+    {e:'🌾',n:'糙米飯',a:.03,b:.6,t:'糙米保留了胚芽，多一點點油脂，ω-6 稍多，但量很少。'},
+    {e:'🫘',n:'五穀雜糧飯',a:.05,b:.8,t:'雜糧和豆類多一點油脂，以 ω-6 為主，量不多。'},
+    {e:'🥦',n:'燙青菜',a:.6,b:.3,t:'改成燙的，少了炒菜油，還保有一點 ω-3。'}]},
+  {n:'晚餐',pick:3,oil:1,ask:'晚餐吃什麼？',items:[
+    {e:'🍢',n:'鹹酥雞',a:.5,b:14,fry:1,t:'炸物冠軍！ω-6 一口氣往右衝。'},
+    {e:'🍤',n:'炸蝦',a:.8,b:10,fry:1,t:'蝦本身不錯，但炸過就吸了很多油。'},
+    {e:'🐔',n:'三杯雞',a:.3,b:6,t:'麻油和炒油都偏 ω-6。'},
+    {e:'🌶️',n:'麻婆豆腐',a:.6,b:5,t:'豆腐有一點 ω-3，但炒醬用的油不少。'},
+    {e:'🍳',n:'番茄炒蛋',a:.3,b:4,t:'家常菜，炒菜油決定了 ω-6 多寡。'},
+    {e:'🥩',n:'牛排',a:.3,b:1.5,t:'紅肉兩種都不多，影響比較小。'},
+    {e:'🍣',n:'烤鮭魚',a:6,b:1,t:'鮭魚是 ω-3 的好來源。'},
+    {e:'🐟',n:'清蒸鱸魚',a:3,b:.8,t:'清蒸不加油，魚的 ω-3 都保留下來。'},
+    {e:'🦐',n:'白灼蝦',a:.5,b:.3,t:'水煮蝦油脂少，兩種都不多。'},
+    {e:'🫛',n:'涼拌毛豆',a:.8,b:3,t:'涼拌菜最適合淋上好油。'},
+    {e:'🥒',n:'涼拌小黃瓜',a:.05,b:.1,t:'幾乎沒有油脂，調味油決定一切。'},
+    {e:'🍚',n:'白飯',a:.02,b:.2,t:'白米飯幾乎沒有油脂，天秤幾乎不動。'},
+    {e:'🌾',n:'糙米飯',a:.03,b:.6,t:'糙米保留了胚芽，多一點點油脂，ω-6 稍多，但量很少。'},
+    {e:'🫘',n:'五穀雜糧飯',a:.05,b:.8,t:'雜糧和豆類多一點油脂，以 ω-6 為主，量不多。'},
+    {e:'🌿',n:'燙地瓜葉',a:.6,b:.3,t:'深綠色蔬菜，有少量 ω-3。'}],
+   oils:[
+    {e:'⭐',n:'印加果油',a:5.09,b:4.38,rt:'0.9 : 1',p3:45.8,p6:39.4,cold:1,t:'ω-3 約 45.8%、ω-6 約 39.4%。ω-3 和 ω-6 都多，比例接近 1 : 1。適合涼拌或起鍋前淋上，不適合高溫油炸。印加果油的 ω-3 是植物性的 ALA，每天 10 ml 約提供 4 g。ALA 在體內可以轉換成 EPA，轉成 DHA 的量因人而異，男性比較少。每週搭配吃兩次魚，EPA、DHA 更完整。'},
+    {e:'🥥',n:'椰子油',a:0.0,b:0.19,rt:'—',p3:0,p6:1.7,t:'ω-3 約 0%、ω-6 約 1.7%。九成是飽和脂肪酸，ω-3、ω-6 都很少，對這個天秤影響小，但飽和脂肪也不宜多。'},
+    {e:'🥑',n:'酪梨油',a:0.0,b:0.22,rt:'—',p3:0,p6:2,t:'ω-3 約 0%、ω-6 約 2%。以 ω-9 為主，對這個天秤影響小。'},
+    {e:'💊',n:'精煉魚油',a:6.11,b:0.0,rt:'0 : 1',p3:55,p6:0,t:'ω-3 約 30～80%、ω-6 約 0%。魚油多半是膠囊補充品，ω-3（EPA、DHA）含量依產品從 30% 到 80% 不等，這裡取中間值。'},
+    {e:'🌾',n:'亞麻籽油',a:6.42,b:1.58,rt:'0.2 : 1',p3:57.8,p6:14.2,cold:1,t:'ω-3 約 57.8%、ω-6 約 14.2%。ω-3 比例很高，怕高溫，適合涼拌。'},
+    {e:'🌿',n:'紫蘇籽油',a:7.0,b:1.67,rt:'0.2 : 1',p3:63,p6:15,cold:1,t:'ω-3 約 63%、ω-6 約 15%。ω-3 比例很高，怕高溫，適合涼拌。'},
+    {e:'🐟',n:'天然魚油',a:2.44,b:0.44,rt:'0.2 : 1',p3:22,p6:4,t:'ω-3 約 22%、ω-6 約 4%。來自魚的 ω-3（EPA、DHA）。'},
+    {e:'🍣',n:'鮭魚油',a:3.33,b:1.78,rt:'0.5 : 1',p3:30,p6:16,t:'ω-3 約 30%、ω-6 約 16%。來自鮭魚的 ω-3，比例在黃金範圍內。'},
+    {e:'🌼',n:'芥花油',a:0.87,b:3.21,rt:'3.7 : 1',p3:7.8,p6:28.9,t:'ω-3 約 7.8%、ω-6 約 28.9%。兩種都有，比例在黃金範圍內，是比較平衡的炒菜油。'},
+    {e:'🫘',n:'大豆油',a:0.76,b:5.93,rt:'7.9 : 1',p3:6.8,p6:53.4,t:'ω-3 約 6.8%、ω-6 約 53.4%。外食和家裡最常用，ω-6 偏多。'},
+    {e:'🐮',n:'牛油',a:0.03,b:0.27,rt:'8 : 1',p3:0.3,p6:2.4,t:'ω-3 約 0.3%、ω-6 約 2.4%。以飽和脂肪和 ω-9 為主，ω-3、ω-6 都不多。'},
+    {e:'🐷',n:'豬油',a:0.19,b:1.82,rt:'9.6 : 1',p3:1.7,p6:16.4,t:'ω-3 約 1.7%、ω-6 約 16.4%。以飽和脂肪和 ω-9 為主，ω-6 比 ω-3 多。'},
+    {e:'🍵',n:'苦茶油',a:0.07,b:0.99,rt:'14.8 : 1',p3:0.6,p6:8.9,t:'ω-3 約 0.6%、ω-6 約 8.9%。以 ω-9 為主，ω-3、ω-6 都不多，但比例偏 ω-6。'},
+    {e:'🫒',n:'橄欖油',a:0.08,b:0.99,rt:'17.7 : 1',p3:0.7,p6:8.9,t:'ω-3 約 0.7%、ω-6 約 8.9%。以 ω-9 為主，ω-3、ω-6 都不多，但比例偏 ω-6。'},
+    {e:'🌽',n:'玉米油',a:0.3,b:6.19,rt:'20.6 : 1',p3:2.7,p6:55.7,t:'ω-3 約 2.7%、ω-6 約 55.7%。ω-6 很多，比例很高。'},
+    {e:'🌴',n:'棕櫚油',a:0.04,b:1.12,rt:'25.3 : 1',p3:0.4,p6:10.1,t:'ω-3 約 0.4%、ω-6 約 10.1%。一半是飽和脂肪，常用在油炸和加工食品。'},
+    {e:'🍚',n:'玄米油',a:0.11,b:4.0,rt:'36 : 1',p3:1,p6:36,t:'ω-3 約 1%、ω-6 約 36%。ω-6 偏多。'},
+    {e:'🟤',n:'芝麻油',a:0.09,b:4.74,rt:'53.4 : 1',p3:0.8,p6:42.7,t:'ω-3 約 0.8%、ω-6 約 42.7%。香氣十足，但 ω-6 很多。'},
+    {e:'🌻',n:'葵花油',a:0.06,b:6.84,rt:'123.2 : 1',p3:0.5,p6:61.6,t:'ω-3 約 0.5%、ω-6 約 61.6%。ω-6 非常多、ω-3 幾乎沒有。'},
+    {e:'🌺',n:'紅花油',a:0.06,b:8.14,rt:'146.6 : 1',p3:0.5,p6:73.3,t:'ω-3 約 0.5%、ω-6 約 73.3%。ω-6 非常多、ω-3 幾乎沒有。'},
+    {e:'🍇',n:'葡萄籽油',a:0.03,b:7.63,rt:'229 : 1',p3:0.3,p6:68.7,t:'ω-3 約 0.3%、ω-6 約 68.7%。ω-6 非常多、ω-3 幾乎沒有。'},
+    {e:'🥜',n:'花生油',a:0.01,b:4.29,rt:'386 : 1',p3:0.1,p6:38.6,t:'ω-3 約 0.1%、ω-6 約 38.6%。ω-6 比 ω-3 多了好幾百倍。'}
+   ]},
+  {n:'點心',pick:2,ask:'嘴饞了，吃什麼點心？',items:[
+    {e:'🍗',n:'炸雞排',a:.5,b:13,fry:1,t:'夜市炸雞排，ω-6 很高。'},
+    {e:'🍟',n:'薯條',a:.3,b:9,fry:1,t:'油炸點心，ω-6 偏多。'},
+    {e:'🍘',n:'洋芋片',a:.2,b:8,fry:1,t:'洋芋片是炸的，ω-6 偏多。'},
+    {e:'🍪',n:'餅乾',a:.2,b:5,t:'酥脆口感常來自植物油，ω-6 偏多。'},
+    {e:'🍿',n:'爆米花',a:.2,b:3,t:'爆的時候加了油，ω-6 偏多一點。'},
+    {e:'🧋',n:'珍珠奶茶',a:.1,b:2,t:'奶精含植物油，帶一點 ω-6。'},
+    {e:'🍫',n:'巧克力',a:.1,b:1,t:'可可脂以飽和脂肪為主，ω 影響小。'},
+    {e:'🎃',n:'南瓜子',a:.2,b:9,t:'南瓜子營養好，但 ω-6 比 ω-3 多很多。'},
+    {e:'🥜',n:'綜合堅果',a:1.5,b:9,t:'堅果是好零食，但多數 ω-6 比較多。'},
+    {e:'🍮',n:'豆花',a:.3,b:1.5,t:'黃豆做的，油脂不多。'},
+    {e:'🍨',n:'奇亞籽優格',a:4,b:1.3,t:'奇亞籽有植物性 ω-3。'},
+    {e:'🍎',n:'水果',a:.1,b:.2,t:'水果幾乎沒有油脂。'}]}
+];
+const MAXV=14;
+
+/* ============ SOUND (Web Audio, synthesized) ============ */
+const Snd=(()=>{let ctx=null,master=null,bgm=null,muted=false;
+  try{muted=localStorage.getItem('omegaMute')==='1';}catch(e){}
+  function start(){if(ctx){if(ctx.state==='suspended')ctx.resume();return;}
+    try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+    master=ctx.createGain();master.gain.value=muted?0:.8;master.connect(ctx.destination);music();}
+  function tone(f,t0,d,type='sine',v=.18,dest=master){if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;
+    g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(v,t0+.01);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g);g.connect(dest);o.start(t0);o.stop(t0+d+.05);}
+  function noise(t0,d,v=.12,freq=3000){if(!ctx)return;const len=Math.floor(ctx.sampleRate*d),buf=ctx.createBuffer(1,len,ctx.sampleRate),ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*(Math.random()<.3?1:.3);
+    const s=ctx.createBufferSource();s.buffer=buf;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=.8;const g=ctx.createGain();
+    g.gain.setValueAtTime(v,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);s.connect(f);f.connect(g);g.connect(master);s.start(t0);}
+  function music(){if(!ctx)return;bgm=ctx.createGain();bgm.gain.value=.05;bgm.connect(master);
+    const scale=[392,440,523,587,659,784],pat=[0,2,4,2,3,1,5,4,0,2,3,1,4,2,1,0];let i=0;
+    const tick=()=>{if(!ctx)return;const t=ctx.currentTime+.05;const n=pat[i%pat.length];tone(scale[n],t,.35,'triangle',.9,bgm);
+      if(i%4===0)tone(scale[0]/2,t,.6,'sine',.7,bgm);i++;};
+    setInterval(tick,300);}
+  const fx={
+    tap(){const t=ctx.currentTime;tone(660,t,.08,'square',.06);},
+    bead(side,k){const t=ctx.currentTime+k*.06;tone(side?330+k*12:880+k*30,t,.12,'sine',.12);},
+    sizzle(){noise(ctx.currentTime,.9,.1,4200);},
+    thunk(){const t=ctx.currentTime;tone(140,t,.25,'sine',.25);tone(90,t,.3,'triangle',.15);},
+    gold(){const t=ctx.currentTime;[523,659,784,1047].forEach((f,i)=>tone(f,t+i*.09,.35,'triangle',.15));},
+    warn(){const t=ctx.currentTime;tone(240,t,.25,'sawtooth',.06);tone(200,t+.15,.3,'sawtooth',.06);},
+    right(){const t=ctx.currentTime;tone(784,t,.15,'triangle',.16);tone(1175,t+.1,.3,'triangle',.16);},
+    wrong(){const t=ctx.currentTime;tone(220,t,.3,'square',.07);tone(185,t+.12,.35,'square',.07);},
+    swap(){const t=ctx.currentTime;tone(500,t,.1,'triangle',.12);tone(750,t+.08,.18,'triangle',.12);},
+    fanfare(){const t=ctx.currentTime;[523,659,784,659,784,1047].forEach((f,i)=>tone(f,t+i*.13,.4,'triangle',.16));}
+  };
+  return{start,muted:()=>muted,
+    play(n,...a){if(!ctx||muted)return;try{fx[n](...a);}catch(e){}},
+    toggle(){muted=!muted;try{localStorage.setItem('omegaMute',muted?'1':'0');}catch(e){}if(master)master.gain.setTargetAtTime(muted?0:.8,ctx.currentTime,.05);return muted;}};
+})();
+$('muteBtn').textContent=Snd.muted()?'🔇':'🔊';
+$('muteBtn').onclick=()=>{Snd.start();$('muteBtn').textContent=Snd.toggle()?'🔇':'🔊';};
+
+/* ============ STATE ============ */
+let S;
+function fresh(){return{meal:0,picks:[],eaten:[],a:0,b:0,swaps:2,mode:'eat',swapSel:null,quiz:[],qi:0,score:0,goldenAtEnd:false};}
+
+/* ============ SCALE ============ */
+const PIV={x:180,y:78},ARM=128;
+let ang=0,vel=0,target=0,settled=true;
+function ratio(){return S.a<=0&&S.b<=0?null:S.b/Math.max(S.a,.05);}
+function pos(r){if(r==null)return 50;const v=Math.log2(r/2)/2;return 50+Math.max(-1,Math.min(1,v))*50;}
+function zoneOf(r){if(r==null)return'none';if(r<.7)return'w3';if(r<1)return'lowish';if(r<=4)return'gold';if(r<=8)return'high';return'w6';}
+const ZTXT={none:'還沒吃東西',w3:'ω-3 太多了',lowish:'ω-3 稍多',gold:'✨ 黃金比例',high:'ω-6 偏高',w6:'🔥 ω-6 太多'};
+const ZCOL={none:'var(--ink-soft)',w3:'var(--silent)',lowish:'var(--w3)',gold:'var(--w3)',high:'var(--w6)',w6:'var(--w6)'};
+function panSVG(side){const c=side?'#ec6a2c':'#2f9e62',lab=side?'ω-6':'ω-3';
+  return `<line x1="0" y1="0" x2="-36" y2="66" stroke="#6b4430" stroke-width="2"/><line x1="0" y1="0" x2="36" y2="66" stroke="#6b4430" stroke-width="2"/>
+  <ellipse class="heap" cx="0" cy="66" rx="0" ry="0" fill="${c}"/>
+  <path d="M-46 64 Q0 96 46 64 Z" fill="#fff" stroke="#6b4430" stroke-width="2.5"/>
+  <text x="0" y="106" text-anchor="middle" font-size="13" fill="${c}" font-family="Huninn,sans-serif">${lab}</text>`;}
+$('panL').innerHTML=panSVG(0);$('panR').innerHTML=panSVG(1);
+function ends(){const ca=Math.cos(ang*Math.PI/180),sa=Math.sin(ang*Math.PI/180);
+  return[{x:PIV.x-ARM*ca,y:PIV.y-ARM*sa},{x:PIV.x+ARM*ca,y:PIV.y+ARM*sa}];}
+function heapSize(v){const r=Math.min(40,8+Math.sqrt(v)*8.5);return v<=0?[0,0]:[r,Math.min(30,r*.7)];}
+function drawScale(){
+  $('beam').setAttribute('transform',`rotate(${ang} ${PIV.x} ${PIV.y})`);
+  const e=ends();
+  [['panL',S.a],['panR',S.b]].forEach(([id,v],i)=>{const g=$(id);g.setAttribute('transform',`translate(${e[i].x} ${e[i].y})`);
+    const [rx,ry]=heapSize(v),h=g.querySelector('.heap');h.setAttribute('rx',rx);h.setAttribute('ry',ry);h.setAttribute('cy',66);});
+}
+function setTarget(){const r=ratio();target=r==null?0:(pos(r)-50)/50*18;settled=false;}
+/* beads */
+const beads=[];
+function pour(f,fromEl){
+  const svg=$('scale'),bb=svg.getBoundingClientRect(),fb=fromEl?fromEl.getBoundingClientRect():null;
+  const vb=svg.viewBox.baseVal,sc=Math.min(bb.width/vb.width,bb.height/vb.height),ox=bb.left+(bb.width-vb.width*sc)/2,oy=bb.top+(bb.height-vb.height*sc)/2;
+  const sx=fb?(fb.left+fb.width/2-ox)/sc:180,sy=fb?Math.min(250,(fb.top-oy)/sc):240;
+  const na=f.a>0?Math.max(1,Math.min(10,Math.round(f.a*1.6))):0,nb=f.b>0?Math.max(1,Math.min(10,Math.round(f.b*.9))):0;
+  let k=0;
+  for(let i=0;i<na;i++)beads.push(mkBead(0,sx,sy,k++));
+  for(let i=0;i<nb;i++)beads.push(mkBead(1,sx,sy,k++));
+}
+function mkBead(side,sx,sy,k){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('r',4.5);c.setAttribute('fill',side?'#ec6a2c':'#2f9e62');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','1.5');
+  $('beads').appendChild(c);return{c,side,sx:sx+(Math.random()-.5)*20,sy,t:-k*.05,k,sounded:false};}
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  const before=Math.abs(vel)+Math.abs(target-ang);
+  vel+=(target-ang)*dt*40;vel*=Math.pow(.04,dt);ang+=vel*dt*6;
+  if(!settled&&Math.abs(vel)<.4&&Math.abs(target-ang)<.4){settled=true;Snd.play('thunk');}
+  const e=ends();
+  for(let i=beads.length-1;i>=0;i--){const b=beads[i];b.t+=dt*1.8;
+    if(b.t<0){b.c.setAttribute('opacity',0);continue;}b.c.setAttribute('opacity',1);
+    const tt=Math.min(1,b.t),tx=e[b.side].x+(Math.random()-.5)*4,ty=e[b.side].y+60;
+    const x=b.sx+(tx-b.sx)*tt,y=b.sy+(ty-b.sy)*tt-Math.sin(tt*Math.PI)*90;
+    b.c.setAttribute('cx',x);b.c.setAttribute('cy',y);
+    if(tt>=1){if(!b.sounded){b.sounded=true;Snd.play('bead',b.side,b.k%8);}b.c.remove();beads.splice(i,1);}}
+  drawScale();requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+
+/* ============ UI ============ */
+function say(t){const p=$('say');p.style.opacity=0;setTimeout(()=>{p.innerHTML=t;p.style.opacity=1;},120);}
+function floatAt(txt,el,color){const r=el.getBoundingClientRect(),a=$('app').getBoundingClientRect();const d=document.createElement('div');d.className='float';d.textContent=txt;d.style.color=color;
+  d.style.left=(r.left+r.width/2-a.left)+'px';d.style.top=(r.top-a.top)+'px';$('app').appendChild(d);setTimeout(()=>d.remove(),1300);}
+function updateGauge(){const r=ratio(),z=zoneOf(r);
+  $('ratio').textContent=r==null?'—':(r>=10?Math.round(r):r.toFixed(1))+' : 1';
+  $('zone').textContent=ZTXT[z];$('zone').style.color=ZCOL[z];
+  $('needle').hidden=r==null;$('needle').style.left=pos(r)+'%';}
+function renderMeals(){$('meals').innerHTML=MEALS.map((m,i)=>`<span class="meal ${i<S.meal||S.mode!=='eat'?'done':i===S.meal?'now':''}">${i<S.meal||S.mode!=='eat'?'✓ ':''}${m.n}</span>`).join('')+
+  `<span class="meal ${S.mode==='swap'?'now':''}">改造</span>`;}
+function bars(f){return `<span class="bars"><i class="a" style="width:${Math.max(5,f.a/MAXV*100)}%"></i><i class="b" style="width:${Math.max(5,f.b/MAXV*100)}%"></i></span>`;}
+function foodBtn(f,attrs,cls=''){const badge=f.fry?'<span class="badge">油炸</span>':f.cold?'<span class="badge cold">涼拌用</span>':'';
+  return `<button class="food ${cls}" ${attrs}>${badge}<span class="e">${f.e}</span><span class="n">${f.n}</span>${bars(f)}${f.rt?`<span class="rt">ω-6:ω-3 ${f.rt}</span>`:''}</button>`;}
+
+function curList(){const m=MEALS[S.meal];if(m.oil&&S.oilPhase)return m.oils.map(o=>({...o,oil:1}));return m.items;}
+function renderEat(){
+  const m=MEALS[S.meal],need=m.pick,list=curList(),isOil=list[0]&&list[0].oil;
+  const nDish=S.picks.filter(p=>!p.oil).length,nOil=S.picks.length-nDish,cnt=isOil?nOil:nDish;
+  $('askTitle').textContent=isOil?'用了什麼油？':m.ask;
+  $('askSub').textContent=`已選 ${cnt} 樣・不限數量，也可以不選`;
+  $('tray').innerHTML=list.map((f,i)=>{const picked=S.picks.some(p=>p.n===f.n);
+    return foodBtn(f,`data-i="${i}"`,picked?'picked':'');}).join('');
+  $('tray').querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>pick(list[+b.dataset.i],b));
+  $('goBtn').disabled=false;
+  $('goBtn').textContent=m.oil&&!isOil?'下一步：選用油':S.meal===MEALS.length-1?'吃完點心，結算這一天':'吃完'+m.n;
+  $('goBtn').classList.remove('green');
+}
+function pick(f,el){
+  const m=MEALS[S.meal];const i=S.picks.findIndex(p=>p.n===f.n);
+  if(i>=0){S.picks.splice(i,1);S.a-=f.a;S.b-=f.b;S.a=Math.max(0,S.a);S.b=Math.max(0,S.b);Snd.play('tap');setTarget();updateGauge();say('拿下來了，換一樣試試看。');renderEat();return;}
+    Snd.play('tap');S.picks.push({...f});S.a+=f.a;S.b+=f.b;
+  pour(f,el);if(f.fry)Snd.play('sizzle');
+  floatAt(f.p3!=null?(f.a>=f.b?'ω-3 '+(f.n==='精煉魚油'?'30～80':f.p3)+'%':'ω-6 '+f.p6+'%'):(f.a>=f.b?'ω-3 ＋'+f.a:'ω-6 ＋'+f.b),el,f.a>=f.b?'#24653a':'#c24a14');
+  let tip=f.t;
+  if(f.cold&&S.picks.some(p=>p.fry))tip+=' 今晚有炸物，記得這瓶油要拿來涼拌，不要下鍋炸喔。';
+  say(tip);setTimeout(()=>{setTarget();updateGauge();},350);renderEat();
+}
+$('goBtn').onclick=()=>{if(S.mode==='eat'){const m=MEALS[S.meal];if(m.oil&&!S.oilPhase){S.oilPhase=true;Snd.play('tap');say('這餐用了什麼油？可以不選，也可以選好幾種。看看油怎麼影響天秤！');renderEat();return;}finishMeal();}else if(S.mode==='swap')finishSwap();};
+
+function fmtR(r){return r==null?'—':(r>=10?Math.round(r):r.toFixed(1))+' : 1';}
+function finishMeal(){
+  const m=MEALS[S.meal];
+  if(S.meal===MEALS.length-1&&!S.eaten.length&&!S.picks.length){say('今天什麼都還沒吃耶！至少選一樣，才能看看你的一天。');Snd.play('warn');return;}S.picks.forEach(p=>S.eaten.push({...p,meal:S.meal}));S.picks=[];S.oilPhase=false;
+  const r=ratio(),z=zoneOf(r);
+  const msg={gold:'很棒！目前在黃金比例內。',high:'有點偏 ω-6 了，下一餐可以想想怎麼拉回來。',w6:'ω-6 已經太多了！下一餐多選綠色長條比較長的食物。',w3:'ω-3 太多了，ω-3 也不是越多越好喔。',none:'這一餐沒有吃東西，天秤還是空的。',lowish:'ω-3 稍多，維持平衡就好。',none:''}[z];
+  Snd.play(z==='gold'?'gold':z==='w6'||z==='w3'?'warn':'tap');
+  $('mealCard').innerHTML=`<p class="verdict">${m.n}吃完了！</p>
+    <div class="ratio-big">${fmtR(r)}<span>今天吃進去的 ω-6 : ω-3・${ZTXT[z]}</span></div>
+    <p style="text-align:center">${msg}</p>
+    ${S.meal===0?'<p class="small" style="text-align:center">一餐不會馬上改變身體，天秤會把一整天加起來算。</p>':''}
+    <button class="go green" id="nextMeal">${S.meal<MEALS.length-1?'下一餐：'+MEALS[S.meal+1].n:'看看我的一天'}</button>`;
+  $('ovMeal').hidden=false;
+  $('nextMeal').onclick=()=>{$('ovMeal').hidden=true;Snd.play('tap');
+    if(S.meal<MEALS.length-1){S.meal++;renderMeals();renderEat();say(MEALS[S.meal].oil?'晚餐先選菜，再選用了什麼油。看看油怎麼影響天秤！':'接下來是'+MEALS[S.meal].n+'，天秤會累積一整天喔。');}
+    else dayEnd();};
+}
+
+/* ============ DAY END + SWAP ============ */
+function dayEnd(){
+  const r=ratio(),z=zoneOf(r);S.before=r;
+  $('mealCard').innerHTML=`<p class="verdict">你的一天</p>
+    <div class="ratio-big">${r>=10?Math.round(r):r.toFixed(1)} : 1<span>ω-6 : ω-3・${ZTXT[z]}</span></div>
+    <div class="compare"><div><b>10～20 : 1</b>常見外食族</div><div><b>1～4 : 1</b>黃金比例目標</div></div>
+    <p class="key"><b class="t">⭐ 重要觀念：身體的比例跟著習慣走</b>一天吃進去的量，不會馬上改變身體。改造完之後，我們用<b>細胞時光機</b>看看每天這樣吃會發生什麼事。</p>
+    <p>${z==='gold'?'太厲害了，已經在黃金比例！還是可以用 2 次換菜機會試試別的組合。':'現在開始<b>改造時間</b>！你有 <b>2 次換菜機會</b>，點一樣吃過的食物，換成同一餐的其他選擇。'}</p>
+    <button class="go green" id="toSwap">開始改造</button>`;
+  $('ovMeal').hidden=false;Snd.play(z==='gold'?'gold':'warn');
+  $('toSwap').onclick=()=>{$('ovMeal').hidden=true;S.mode='swap';renderMeals();renderSwap();say(zoneOf(ratio())==='gold'?'已經在黃金比例了！可以按「細胞時光機」看看每天這樣吃的效果，也可以試試換菜。':'哪一樣最讓天秤往右倒？先換掉它！');};
+}
+function renderSwap(){
+  $('cellBtn').hidden=false;
+  $('askTitle').textContent=S.swapSel==null?'選一樣想換掉的食物':'換成什麼？';
+  $('askSub').textContent=`剩 ${S.swaps} 次換菜機會`;
+  let html='';
+  if(S.swapSel==null){html=S.eaten.map((f,i)=>foodBtn(f,`data-e="${i}" ${S.swaps?'':'disabled'}`)).join('');}
+  else{const ef=S.eaten[S.swapSel],m=MEALS[ef.meal],pool=(ef.oil?m.oils.map(o=>({...o,oil:1})):m.items).filter(f=>!S.eaten.some(x=>x.n===f.n));
+    html=`<button class="food" data-back="1"><span class="e">↩</span><span class="n">不換了</span></button>`+pool.map((f,i)=>foodBtn(f,`data-p="${i}"`)).join('');
+    $('tray').innerHTML=html;
+    $('tray').querySelector('[data-back]').onclick=()=>{S.swapSel=null;Snd.play('tap');renderSwap();};
+    $('tray').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>doSwap(pool[+b.dataset.p],b));
+    $('goBtn').disabled=false;$('goBtn').textContent='完成改造，去答題';$('goBtn').classList.add('green');return;}
+  $('tray').innerHTML=html;
+  $('tray').querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{S.swapSel=+b.dataset.e;Snd.play('tap');const f=S.eaten[S.swapSel];say(`要把${MEALS[f.meal].n}的「${f.n}」換成什麼呢？看看長條，綠色長一點的會把天秤拉回左邊。`);renderSwap();});
+  $('goBtn').disabled=false;$('goBtn').textContent='完成改造，去答題';$('goBtn').classList.add('green');
+}
+function doSwap(nf,el){
+  const old=S.eaten[S.swapSel],before=ratio();
+  S.a=Math.max(0,S.a-old.a+nf.a);S.b=Math.max(0,S.b-old.b+nf.b);
+  S.eaten[S.swapSel]={...nf,meal:old.meal};S.swaps--;S.swapSel=null;
+  Snd.play('swap');pour(nf,el);if(nf.fry)Snd.play('sizzle');
+  setTimeout(()=>{setTarget();updateGauge();const r=ratio(),z=zoneOf(r);
+    if(z==='gold')Snd.play('gold');
+    const diff=before-r;
+    say(`「${old.n}」換成「${nf.n}」，比例從 ${before.toFixed(1)} 變成 ${r.toFixed(1)} : 1。`+(z==='gold'?'進入黃金比例了！':diff>0?'往黃金比例靠近了！':'咦，反而更偏了，換菜要看兩種長條喔。')+(S.swaps?'':' 記住，每天都這樣換，幾個月後身體就會慢慢跟上！按下面的按鈕去答題吧。'));},400);
+  renderSwap();
+}
+function finishSwap(){S.goldenAtEnd=zoneOf(ratio())==='gold';S.mode='quiz';$('cellBtn').hidden=true;renderMeals();openCell('quiz');}
+$('cellBtn').onclick=()=>{Snd.play('tap');openCell('swap');};
+
+/* ============ CELL TIME MACHINE ============ */
+const NL=14,TAILS=NL*2,MY=96;let cell=null;
+const SVGNS='http://www.w3.org/2000/svg';
+function memInit(){
+  const svg=$('memSvg');
+  let h=`<rect x="0" y="0" width="340" height="262" rx="12" fill="#eef8f6"/>
+    <rect x="0" y="${MY+64}" width="340" height="4" fill="#d6ece8"/>
+    <text x="10" y="16" font-size="11" fill="#4d6b70" font-family="Huninn,sans-serif">細胞外</text>
+    <text x="10" y="256" font-size="11" fill="#4d6b70" font-family="Huninn,sans-serif">細胞內</text>
+    <text id="flame" x="300" y="60" font-size="0" text-anchor="middle">🔥</text>
+    <text id="germ" x="300" y="48" font-size="0" text-anchor="middle">🦠</text>
+    <text id="flameT" x="300" y="80" font-size="11" text-anchor="middle" fill="#a8401a" font-family="Huninn,sans-serif"></text>
+    <g id="hl"></g>
+    <g id="parts"></g>
+    <g id="hits"></g>`;
+  svg.innerHTML=h;
+  const g=document.createElementNS(SVGNS,'g');svg.insertBefore(g,svg.querySelector('#parts'));
+  cell.tails=[];
+  for(let L=0;L<2;L++)for(let i=0;i<NL;i++){const x=18+i*23.4,top=L===0,hy=top?MY+4:MY+128,d=top?1:-1;
+    const sat=document.createElementNS(SVGNS,'path');sat.setAttribute('stroke','#b9c3c6');sat.setAttribute('stroke-width','3.2');sat.setAttribute('stroke-linecap','round');sat.setAttribute('fill','none');
+    const v=document.createElementNS(SVGNS,'path');v.setAttribute('stroke-width','3.4');v.setAttribute('stroke-linecap','round');v.setAttribute('stroke-linejoin','round');v.setAttribute('fill','none');
+    const hd=document.createElementNS(SVGNS,'circle');hd.setAttribute('cx',x);hd.setAttribute('cy',hy);hd.setAttribute('r',8);hd.setAttribute('fill','#9fd3e0');hd.setAttribute('stroke','#4aa3b8');hd.setAttribute('stroke-width','1.5');
+    g.append(sat,v,hd);cell.tails.push({x,hy,d,sat,v,hd,kind:'o6',ph:Math.random()*6,gone:0});
+    const hr=document.createElementNS(SVGNS,'rect');hr.setAttribute('x',x-11);hr.setAttribute('y',top?hy-11:hy-57);hr.setAttribute('width',22);hr.setAttribute('height',68);
+    hr.setAttribute('fill','transparent');hr.style.cursor='pointer';const idx=cell.tails.length-1;hr.onclick=()=>guideTap('lipid',idx);svg.querySelector('#hits').appendChild(hr);}
+  // one tap zone for the top area: germ / flame share a spot, droplets queue to the left
+  const zone=document.createElementNS(SVGNS,'rect');zone.setAttribute('x',180);zone.setAttribute('y',0);zone.setAttribute('width',160);zone.setAttribute('height',88);
+  zone.setAttribute('fill','transparent');zone.style.cursor='pointer';svg.querySelector('#hits').appendChild(zone);
+  zone.onclick=e=>{const m=svg.getScreenCTM();if(!m)return;const p=new DOMPoint(e.clientX,e.clientY).matrixTransform(m.inverse());
+    if(Math.hypot(p.x-300,p.y-46)<40)guideTap('fire');else if(p.x<=272)guideTap('drops');else guideTap('fire');};
+  cell.order=shuffle([...Array(TAILS).keys()]);
+}
+function n3For(r){return Math.max(1,Math.round(TAILS/(1+r)));}
+function paintMem(n3,rr){
+  cell.order.forEach((idx,k)=>{const want=k<n3?'o3':'o6',t=cell.tails[idx];
+    if(t.kind!==want){t.kind=want;if(cell.ready)Snd.play('bead',want==='o6'?1:0,k%8);}});
+  cell.n3=n3;$('memRatio').textContent=(rr>=10?Math.round(rr):rr.toFixed(1))+' : 1';}
+function wiggle(now){
+  if(!cell||$('ovCell').hidden){cell&&(cell.loop=null);return;}
+  const t=now/1000;
+  cell.tails.forEach(T=>{const {x,hy,d}=T,col=T.kind==='o3'?'#2f9e62':'#ec6a2c';
+    const amp=T.kind==='o3'?5:2.5,sp=T.kind==='o3'?4:2.6,w=Math.sin(t*sp+T.ph)*amp,w2=Math.cos(t*sp*.8+T.ph)*amp*.6;
+    T.v.setAttribute('d',`M${x+3} ${hy+d*7} L${x+3} ${hy+d*20} L${x+8+w} ${hy+d*32} L${x+3+w2} ${hy+d*44} L${x+6+w} ${hy+d*54}`);
+    T.v.setAttribute('stroke',col);T.v.setAttribute('opacity',T.gone>0?.15:1);
+    const s=Math.sin(t*1.5+T.ph)*.6;T.sat.setAttribute('d',`M${x-3} ${hy+d*7} L${x-3+s} ${hy+d*54}`);
+    const hb=Math.sin(t*2+T.ph)*.8;T.hd.setAttribute('cy',hy+hb);});
+  const hl=$('hl');if(hl)hl.setAttribute('opacity',.45+.55*Math.abs(Math.sin(t*3)));
+  if(cell.guide&&cell.gi===4){const g=$('germ');g.setAttribute('font-size',22+Math.sin(t*6)*3);}
+  cell.loop=requestAnimationFrame(wiggle);}
+const BASE=15,ZN=12;
+function outcome(r){
+  if(r<1)return{t:'⚠ 發炎起不來，病菌還在',c:'#4f6b78',k:'weak'};
+  if(r<=4)return{t:'✨ 平衡：清除病菌後適時消退',c:'#24653a',k:'gold'};
+  if(r<=8)return{t:'病菌清除了，但發炎消退偏慢',c:'#b8640f',k:'slow'};
+  return{t:'🔥 病菌清除了，但發炎拖很久',c:'#a8401a',k:'long'};}
+function settleFor(r){return Math.max(2,Math.min(10,2+1.6*Math.log2(1+r)));}
+function fmt1(r){return r>=10?String(Math.round(r)):r.toFixed(1);}
+function zap(label,done,opts){const C=cell,r=cell.cur;
+  const o3=[],o6=[];cell.tails.forEach((T,i)=>(T.kind==='o3'?o3:o6).push(i));shuffle(o3);shuffle(o6);
+  const nG=Math.min(o3.length,Math.round(ZN/(1+r))),nO=ZN-nG,pick=shuffle([...o3.slice(0,nG),...o6.slice(0,nO)]);
+  const settle=settleFor(r);
+  Snd.play('warn');$('zapBtn').disabled=true;$('cellCap').innerHTML='⚡ 🦠 病菌入侵！細胞從膜上切下 12 個脂肪酸，轉換成訊號：<br>🔥 點燃<b>發炎</b>去清除病菌，💧 在旁邊待命，清完後<b>幫忙關掉發炎</b>。';
+  const parts=$('parts'),flame=$('flame'),ft=$('flameT'),germ=$('germ');let fire=0,wait=0;const drops=[];
+  ft.textContent='🦠 病菌入侵';germ.setAttribute('font-size',24);germ.setAttribute('opacity',1);
+  pick.forEach((i,k)=>{const T=cell.tails[i];setTimeout(()=>{if(cell!==C)return;T.gone=1;
+    const isG=T.kind==='o3',el=document.createElementNS(SVGNS,'text');el.textContent=isG?'💧':'🔥';el.setAttribute('font-size',isG?'16':'14');el.setAttribute('text-anchor','middle');parts.appendChild(el);
+    const sx=T.x+4,sy=T.hy+T.d*30;let ex,ey;
+    if(isG){ex=206+(wait%6)*14;ey=wait<6?28:46;wait++;drops.push(el);}else{ex=300+(Math.random()-.5)*24;ey=54;}
+    const t0=performance.now();Snd.play('bead',isG?0:1,k%8);
+    (function fly(now){const p=Math.min(1,(now-t0)/900),e=1-Math.pow(1-p,2);el.setAttribute('x',sx+(ex-sx)*e);el.setAttribute('y',sy+(ey-sy)*e-Math.sin(p*Math.PI)*30);
+      if(p<1)requestAnimationFrame(fly);else if(!isG){el.remove();fire+=1;flame.setAttribute('font-size',14+fire*3.5);ft.textContent='發炎';}})(t0);
+  },k*120);});
+  const go=()=>{if(cell!==C)return;
+    Snd.play('sizzle');const start=performance.now(),peak=14+fire*3.5;
+    const oc=outcome(r);$('cellCap').innerHTML=oc.k==='weak'?`🔥 發炎訊號只有 <b>${nO}</b> 個，火太小，<b>病菌還沒清完</b>，💧 <b>${nG}</b> 個就把火關掉了……`:oc.k==='gold'?`🔥 <b>${nO}</b> 個把病菌清掉，💧 <b>${nG}</b> 個接著飛過去，<b>適時把發炎關掉</b>。`:`🔥 <b>${nO}</b> 個很快把病菌清掉，但 💧 只有 <b>${nG}</b> 個，<b>發炎拖比較久才消退</b>……`;
+    // droplets fly into the flame spread across the first 75% of the burn
+    drops.forEach((el,j)=>{const at=settle*1000*.75*(j+1)/(drops.length+1);setTimeout(()=>{if(cell!==C)return;
+      const x0=+el.getAttribute('x'),y0=+el.getAttribute('y'),t0=performance.now();
+      (function hit(now){if(cell!==C){el.remove();return;}const p=Math.min(1,(now-t0)/450);el.setAttribute('x',x0+(300-x0)*p);el.setAttribute('y',y0+(50-y0)*p);
+        if(p<1)requestAnimationFrame(hit);else{el.textContent='💨';Snd.play('swap');setTimeout(()=>el.remove(),350);}})(t0);},at);});
+    (function burn(now){if(cell!==C)return;const s2=(now-start)/1000,p=Math.min(1,s2/settle);flame.setAttribute('font-size',Math.max(0,peak*(1-p*p)));
+      if(oc.k!=='weak'){const g=Math.max(0,1-s2/1.6);germ.setAttribute('font-size',24*g);ft.textContent=g>0?'發炎・清除病菌中':'發炎';}else{germ.setAttribute('font-size',24*(1-.35*p));ft.textContent=p<1?'發炎太弱':'🦠 病菌還在';}
+      if(p<1)requestAnimationFrame(burn);else{flame.setAttribute('font-size',0);if(oc.k!=='weak'){ft.textContent='';germ.setAttribute('font-size',0);}drops.forEach(d=>d.remove());cell.tails.forEach(T=>T.gone=0);Snd.play(oc.k==='gold'?'gold':oc.k==='weak'?'wrong':'thunk');
+        done({label,nO,nG,settle,r});}})(start);
+  };
+  setTimeout(()=>{if(cell!==C)return;opts&&opts.pause?opts.pause(go):go();},ZN*120+1000);
+}
+function cmpHTML(){return cell.results.map(x=>`<div><span>${x.label}・${fmt1(x.r)} : 1</span><b>🔥${x.nO}　💧${x.nG}</b><em style="color:${outcome(x.r).c}">${outcome(x.r).t}</em></div>`).join('');}
+function setMem(r){cell.cur=r;paintMem(n3For(r),r);}
+function openCell(from){
+  const today=ratio();
+  if(cell&&cell.loop)cancelAnimationFrame(cell.loop);
+  cell={today,results:[],ready:false,busy:false,from,cur:BASE};
+  $('cellNext').textContent=from==='swap'?'回到改造':from==='end'?'回到結果':'我懂了，去答題';
+  memInit();setMem(BASE);cell.ready=true;
+  $('dayNum').textContent='第 0 天';$('rbcBar').style.width='0%';$('rbcTxt').textContent='紅血球換新 0%';
+  $('scDailySub').textContent=`你今天的吃法 ${fmt1(today)} : 1`;
+  $('cmp').hidden=true;$('scen').hidden=true;$('zapBtn').hidden=true;$('zapBtn').textContent='⚡ 刺激現在的細胞';$('tip').hidden=true;
+  $('scDaily').classList.remove('on','pulse');$('scOnce').classList.remove('on');$('scOnce').disabled=false;$('cellNext').disabled=from==='quiz';
+  cell.guide=true;cell.gi=0;cell.guideWait=null;guideStep();
+  $('ovCell').hidden=false;$('ovCell').scrollTop=0;cell.loop=requestAnimationFrame(wiggle);
+}
+$('zapBtn').onclick=()=>{if(cell.busy)return;cell.busy=true;Snd.play('tap');
+  zap('現在（一般外食族）',x=>{cell.busy=false;cell.results=[x];$('cmp').innerHTML=cmpHTML();$('cmp').hidden=false;$('zapBtn').hidden=true;$('scen').hidden=false;$('cellNext').disabled=false;
+    $('cellCap').innerHTML=`膜上 ω-6 多，🔥 很快清掉病菌，但 💧 太少，<b>發炎拖很久才消退</b>。<br>如果<b>每天都照你今天的吃法</b>，4 個月後會怎樣？`;});};
+function runCell(mode){
+  if(cell.busy)return;cell.busy=true;
+  $('scDaily').classList.remove('pulse');$('scDaily').classList.toggle('on',mode==='daily');$('scOnce').classList.toggle('on',mode==='once');Snd.play('tap');
+  const r0=BASE,r1=cell.today,better=r1<r0,T=120,dur=6500,t0=performance.now();let lastCap='';
+  cell.ready=false;setMem(r0);cell.ready=true;
+  const caps=mode==='daily'?[[0,'第 1 天：吃了一整天，細胞膜<b>幾乎沒變</b>。'],[7,`第 1 週：開始有一點點新的脂肪酸換進去。`],[30,'第 1 個月：每天持續，細胞膜<b>慢慢換掉一部分</b>。'],[75,'第 2～3 個月：越來越接近你每天的吃法。'],[118,'大約 4 個月：紅血球換新一輪，細胞膜<b>跟上了每天的習慣</b>！']]
+    :[[0,'第 1 天：照今天的吃法吃一天，細胞膜<b>幾乎沒變</b>。'],[5,'隔天又回到外食族的吃法……'],[40,'一個月後：那一天的改變早就看不出來了。'],[118,'4 個月後：細胞膜還是原本的樣子。']];
+  const C=cell;
+  function step(now){if(cell!==C)return;const p=Math.min(1,(now-t0)/dur),day=Math.round(p*T);
+    const f=mode==='daily'?(1-Math.exp(-day/35))/(1-Math.exp(-T/35)):(day<1?0:Math.max(0,.06*Math.exp(-(day-1)/6)));
+    setMem(Math.exp(Math.log(r0)+(Math.log(r1)-Math.log(r0))*f));
+    $('dayNum').textContent=`第 ${day} 天`;$('rbcBar').style.width=Math.min(100,day/120*100)+'%';$('rbcTxt').textContent=`紅血球換新 ${Math.min(100,Math.round(day/120*100))}%`;
+    const c=caps.filter(x=>day>=x[0]).pop();if(c&&c[1]!==lastCap){lastCap=c[1];$('cellCap').innerHTML=c[1];}
+    if(p<1){requestAnimationFrame(step);return;}
+    setTimeout(()=>zap(mode==='daily'?'4 個月後（每天照今天吃）':'4 個月後（只吃今天一天）',x=>{if(cell!==C)return;cell.busy=false;
+      cell.results=[cell.results[0],...cell.results.slice(1).filter(y=>y.label!==x.label),x];$('cmp').innerHTML=cmpHTML();$('cellNext').disabled=false;
+      const d=cell.results[0].settle-x.settle,oc=outcome(x.r);let msg;
+      if(mode==='once')msg=`只吃今天一天，4 個月後細胞膜跟原本差不多，發炎一樣<b>比較慢才消退</b>。<b>偶爾一天不夠，要每天做才會改變。</b>`;
+      else if(oc.k==='weak')msg=`ω-3 太多了！🔥 發炎訊號太少，發炎起不來，<b>病菌沒有清乾淨</b>。ω-3 不是越多越好，<b>平衡才是重點</b>。回去改造，讓比例回到 1～4 : 1。`;
+      else if(oc.k==='gold')msg=`ω-3 和 ω-6 達到平衡：🔥 發炎該來時來、把病菌清掉，💧 再<b>適時把發炎關掉</b>。這就是<b>每天的習慣</b>累積出來的差別！`;
+      else if(d>.2)msg=`比一般外食族好一些，但還是偏 ω-6，<b>發炎消退偏慢</b>。再改造看看，把比例拉到 1～4 : 1！`;
+      else if(d<-.2)msg=`你今天的吃法 ω-6 比一般外食族還多，每天這樣吃，發炎反而<b>更慢才消退</b>。回去改造試試看，換掉炸物或換一種油！`;
+      else msg='你今天的吃法跟一般外食族差不多，4 個月後細胞膜沒什麼改變。回去改造試試看！';
+      const fin=()=>{$('cellCap').innerHTML=msg+`<br><span class="small">也試試「${mode==='daily'?'只吃今天一天':'每天都照今天吃'}」比較看看。</span>`;};
+      if(cell.guide){cell.guide=false;$('scOnce').disabled=false;$('cellNext').disabled=false;tipShow(`<b>4 個月後的結果</b><br><span style="color:${oc.c}">${oc.t}</span><br>${msg}`,()=>{fin();});}else fin();}),600);}
+  requestAnimationFrame(step);
+}
+/* ============ GUIDED TOUR (tap-to-learn) ============ */
+function tipShow(html,next){$('tipTxt').innerHTML=html;$('tip').hidden=false;Snd.play('right');
+  $('tipOk').onclick=()=>{$('tip').hidden=true;Snd.play('tap');next&&next();};}
+function hlClear(){const g=$('hl');if(g)g.innerHTML='';}
+function hlLipids(ids){hlClear();const g=$('hl');ids.forEach(i=>{const T=cell.tails[i],y0=T.d>0?T.hy-12:T.hy-58;
+  const r=document.createElementNS(SVGNS,'rect');r.setAttribute('x',T.x-12);r.setAttribute('y',y0);r.setAttribute('width',24);r.setAttribute('height',70);r.setAttribute('rx',10);
+  r.setAttribute('fill','none');r.setAttribute('stroke','#ffb000');r.setAttribute('stroke-width','3');g.appendChild(r);});}
+function hlCircle(x,y,rad){hlClear();const c=document.createElementNS(SVGNS,'circle');c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',rad);
+  c.setAttribute('fill','none');c.setAttribute('stroke','#ffb000');c.setAttribute('stroke-width','3');$('hl').appendChild(c);}
+function coach(html){$('cellCap').innerHTML=html+(cell.guide?'<br><button class="skip" id="skipG">跳過導覽</button>':'');const sk=$('skipG');if(sk)sk.onclick=skipGuide;}
+function pickKind(k,n){return cell.tails.map((T,i)=>[T,i]).filter(([T])=>T.kind===k).slice(0,n).map(x=>x[1]);}
+const GUIDE=[
+  {cap:'👆 點一下膜上任何一顆<b>藍色圓球</b>',hl:()=>[3,17],ok:()=>true,
+   pop:'<b>這是細胞膜</b><br>細胞膜由很多「磷脂質」排成兩層。每個磷脂質像一隻小蝌蚪：藍色圓頭喜歡水，朝向細胞外和細胞內；兩條尾巴是<b>脂肪酸</b>，藏在膜的中間。'},
+  {cap:'👆 每個磷脂質都有一條<b>灰色尾巴</b>，點一下看看',hl:()=>[6],ok:()=>true,
+   pop:'<b>灰色：其他脂肪酸</b><br>例如飽和脂肪酸、ω-9。它們讓細胞膜有穩定的結構。飲食裡一定有這些脂肪酸，不是只有 ω-3 和 ω-6。'},
+  {cap:'👆 點一下有<b>橘色尾巴</b>的磷脂質',hl:()=>pickKind('o6',3),ok:i=>cell.tails[i].kind==='o6',
+   pop:'<b>橘色：ω-6（主要是花生四烯酸 AA）</b><br>一般外食族的細胞膜，大部分都是橘色。ω-6 是必需脂肪酸，遇到病菌時會做成<b>發炎訊號</b>。'},
+  {cap:'👆 找找看，點一下<b>綠色尾巴</b>',hl:()=>pickKind('o3',4),ok:i=>cell.tails[i].kind==='o3',
+   pop:'<b>綠色：ω-3（EPA、DHA）</b><br>外食族的膜上很少。膜上的比例會跟著<b>長期的飲食習慣</b>慢慢改變，紅血球大約 120 天才換新一輪。'},
+  {cap:'👆 糟糕，病菌來了！點一下右上角的 🦠',target:'germ',
+   pop:'<b>🦠 病菌入侵</b><br>免疫細胞發現病菌時，會用一種酵素（磷脂酶 A2）從細胞膜的磷脂質上<b>切下脂肪酸</b>，再把它們<b>轉換成訊號分子</b>。按「知道了」，看看會發生什麼事！'}
+];
+function guideStep(){
+  const st=GUIDE[cell.gi];if(!st){return;}
+  coach(st.cap);
+  if(st.target==='germ'){$('germ').setAttribute('font-size',24);hlCircle(300,40,22);}
+  else hlLipids(st.hl());
+}
+function guideTap(kind,i){
+  if(!cell.guide||!$('tip').hidden)return;
+  const st=cell.guideWait||GUIDE[cell.gi];if(!st)return;
+  const match=t=>t===kind||(kind==='fire'&&(t==='germ'||t==='flame'));
+  if(cell.guideWait){if(!match(cell.guideWait.target))return;const w=cell.guideWait;cell.guideWait=null;hlClear();tipShow(w.pop,w.next);return;}
+  if(st.target){if(!match(st.target))return;}else{if(kind!=='lipid'||!st.ok(i))return;}
+  hlClear();
+  tipShow(st.pop,()=>{cell.gi++;if(cell.gi<GUIDE.length)guideStep();else guidedZap();});
+}
+function guidedZap(){cell.busy=true;
+  zap('現在（一般外食族）',x=>{cell.busy=false;cell.results=[x];$('cmp').innerHTML=cmpHTML();$('cmp').hidden=false;
+    tipShow('<b>一般外食族的結果</b><br>🔥 很多，很快就把病菌清掉了；但 💧 太少，<b>發炎拖很久才消退</b>。長期這樣，身體容易處在低度、慢性的發炎。',()=>{
+      $('scen').hidden=false;$('scOnce').disabled=true;$('scDaily').classList.add('pulse');
+      coach('👆 如果<b>每天都照你今天的吃法</b>呢？按下面的「🗓 每天都照今天吃」，讓時間快轉 4 個月！');});
+  },{pause:go=>{
+    cell.guideWait={target:'flame',pop:'<b>🔥 發炎訊號（主要來自 ω-6）</b><br>點燃發炎，把免疫細胞叫過來<b>清除病菌</b>。發炎會紅、腫、熱、痛，但這是在<b>保護身體</b>。',
+      next:()=>{cell.guideWait={target:'drops',pop:'<b>💧 消退訊號（來自 ω-3）</b><br>病菌清完後，負責<b>把發炎關掉</b>，讓身體回到平靜。<br>💧 太少，發炎拖很久；🔥 太少，發炎又起不來。所以兩種要<b>平衡</b>。',
+        next:()=>{coach('看看 🔥 和 💧 怎麼合作……');go();}};
+        coach('👆 旁邊排隊的是什麼？點一下 💧');hlCircle(240,36,40);}};
+    coach('👆 點一下右上角的 🔥');hlCircle(300,50,26);}});
+}
+function skipGuide(){cell.guide=false;cell.guideWait=null;hlClear();$('tip').hidden=true;$('germ').setAttribute('font-size',0);
+  if(cell.busy)return;
+  $('scOnce').disabled=false;$('scDaily').classList.remove('pulse');
+  if(cell.results.length){$('scen').hidden=false;coach('選一種吃法，讓時間快轉 4 個月。');}
+  else{$('zapBtn').hidden=false;$('zapBtn').disabled=false;coach(`假設你過去跟<b>一般外食族</b>一樣，細胞膜大約是 <b>15 : 1</b>。按下面的按鈕刺激細胞，看它會發出什麼訊號。`);}
+  $('cellNext').disabled=false;}
+
+$('scDaily').onclick=()=>runCell('daily');$('scOnce').onclick=()=>runCell('once');
+$('cellNext').onclick=()=>{cell.busy=false;$('ovCell').hidden=true;Snd.play('tap');if(cell.from==='quiz')startQuiz();};
+
+/* ============ QUIZ ============ */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startQuiz(){
+  const push=f=>f.b-4*f.a,sorted=[...S.eaten].sort((x,y)=>push(y)-push(x)),top=sorted[0],low=sorted[sorted.length-1],mid=sorted[Math.floor(sorted.length/2)];
+  const q1opts=[...new Map([top,mid,low].map(f=>[f.n,f])).values()];
+  const pool=MEALS.flatMap(m=>m.items).filter(f=>!q1opts.some(o=>o.n===f.n)&&push(f)<push(top)).sort((x,y)=>push(x)-push(y));
+  while(q1opts.length<3&&pool.length)q1opts.push(pool.shift());
+  S.quiz=[
+    {q:`下面哪一樣最讓天秤往 ω-6 倒？`,opts:shuffle(q1opts.map(f=>f.e+' '+f.n)),ans:top.e+' '+top.n,
+     ex:`「${top.n}」的 ω-6 長條最長、ω-3 最短。${top.fry?'油炸食物吸了很多烹調油，是外食 ω-6 偏高的主要原因。':'看長條就能判斷食物偏哪一邊。'}`},
+    {q:'印加果油最適合怎麼吃？',opts:shuffle(['涼拌、拌飯或起鍋前淋上','拿來炸雞排','大火爆炒']),ans:'涼拌、拌飯或起鍋前淋上',
+     ex:'ω-3 怕高溫，涼拌或起鍋前淋上最能保留。印加果油的 ω-3 是植物性的 ALA，每天 10 ml 約提供 4 g。ALA 在體內可以轉換成 EPA，轉成 DHA 的量因人而異，男性比較少。每週搭配吃兩次魚，EPA、DHA 更完整。'},
+    {q:'ω-3 是不是吃越多越好？',opts:shuffle(['不是，兩種平衡最重要','是，越多越好','完全不用吃']),ans:'不是，兩種平衡最重要',
+     ex:'ω-3 和 ω-6 都是身體需要的必需脂肪酸，問題在比例。現代外食多半 ω-6 太多，所以要多補 ω-3，把比例拉回來。'},
+    {q:'今天午餐吃了一份鯖魚，身體裡的 ω 比例會怎樣？',opts:shuffle(['要每天持續，幾週到幾個月才會慢慢改變','吃完馬上就平衡了','以後都不用再吃魚']),ans:'要每天持續，幾週到幾個月才會慢慢改變',
+     ex:'吃進去的脂肪酸會慢慢換進全身的細胞膜，紅血球大約 120 天才換新一輪。一餐的效果很小，真正改變身體的是每天的習慣。'}
+  ];
+  S.qi=0;S.score=0;showQ();$('ovQuiz').hidden=false;
+}
+function showQ(){
+  const Q=S.quiz[S.qi];
+  $('ovQuiz').innerHTML=`<div class="qprog">${S.quiz.map((_,i)=>`<i class="${i<=S.qi?'on':''}"></i>`).join('')}</div>
+    <svg class="hero-m" viewBox="0 0 60 60" aria-hidden="true" style="width:64px;height:64px"><use href="#mascotShape"/></svg>
+    <div class="card"><p class="q">第 ${S.qi+1} 題・${Q.q}</p>
+    <div class="opts">${Q.opts.map((o,i)=>`<button class="opt" data-o="${i}">${o}</button>`).join('')}</div>
+    <div id="exBox"></div></div>`;
+  $('ovQuiz').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{
+    if(b.closest('.opts').dataset.done)return;b.closest('.opts').dataset.done=1;
+    const ok=Q.opts[+b.dataset.o]===Q.ans;if(ok){S.score++;Snd.play('right');}else Snd.play('wrong');
+    $('ovQuiz').querySelectorAll('[data-o]').forEach(x=>{if(Q.opts[+x.dataset.o]===Q.ans)x.classList.add('right');else if(x===b)x.classList.add('wrong');});
+    $('exBox').innerHTML=`<p class="explain">${ok?'✅ 答對了！':'再想想～'}${Q.ex}</p><button class="go green" id="nextQ" style="margin-top:10px;width:100%">${S.qi<S.quiz.length-1?'下一題':'看結果'}</button>`;
+    $('nextQ').onclick=()=>{Snd.play('tap');if(S.qi<S.quiz.length-1){S.qi++;showQ();}else showEnd();};
+  });
+}
+
+/* ============ END ============ */
+function makeCode(){const d=new Date(),p=n=>String(n).padStart(2,'0');return (S.score>=3?'T':'P')+'-'+p(d.getHours())+p(d.getMinutes())+'-'+String(Math.floor(100+Math.random()*900));}
+function showEnd(){
+  $('ovQuiz').hidden=true;Snd.play('fanfare');
+  const stars=(S.goldenAtEnd?1:0)+(S.score>=3?1:0)+(S.score===4?1:0),r=ratio();
+  const prize=S.score>=3?'印加果油試吃':'參加小禮';
+  $('ovEnd').innerHTML=`<div class="card" style="text-align:center">
+      <p class="small">我的一日 ω 天秤</p>
+      <div class="stars">${[0,1,2].map(i=>`<span class="${i<Math.max(1,stars)?'':'off'}">★</span>`).join('')}</div>
+      <div class="ratio-big">${r>=10?Math.round(r):r.toFixed(1)} : 1<span>改造後一天吃進去的 ω-6 : ω-3・${ZTXT[zoneOf(r)]}・答對 ${S.score} / 4 題</span></div>
+    </div>
+    <div class="card" style="text-align:center">
+      <p>出示這個畫面到 <b>新陳生物</b> 攤位，兌換<b>${prize}</b></p>
+      <div class="code">${makeCode()}</div>
+      <button class="redeem" id="redeem">工作人員按此確認已兌換</button>
+      <p class="small">新陳生物科技有限公司・屏東・08-7557557</p>
+    </div>
+    <div class="card"><h3 style="color:var(--lagoon)">帶回家的三個習慣</h3>
+      <p class="key">身體裡的比例跟著長期飲食慢慢改變。這三件事<b>每天做</b>，幾週到幾個月後，細胞裡的比例就會慢慢跟上。</p>
+      <p class="habits">1. 炸的少一點：油炸、酥脆零食是 ω-6 的大來源。<br>2. 魚多一點：每週兩次青背魚，例如鯖魚、秋刀魚、鮭魚。<br>3. 涼拌換好油：涼拌、拌飯淋一匙富含 ω-3 的油，不要拿來高溫油炸。</p></div>
+    <button class="go" id="endCell" style="background:linear-gradient(#8fd8e6,#3fa6bd);text-shadow:0 1px 0 #1d6575;box-shadow:0 4px 0 #1d6575">🧬 再看一次細胞時光機</button>
+    <button class="go green" id="again">換下一位玩家</button>
+    <p class="small">本遊戲為營養知識推廣，食物的 ω 數值為方便比較的相對指數，不是實際含量；食品不具治療疾病之效果，身體不適請諮詢醫師。</p>`;
+  $('ovEnd').hidden=false;
+  $('redeem').onclick=e=>{const d=new Date(),b=e.currentTarget;b.classList.add('done');b.disabled=true;b.textContent='✓ 已兌換 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+  $('endCell').onclick=()=>{Snd.play('tap');openCell('end');};
+  $('again').onclick=()=>{$('ovEnd').hidden=true;reset();$('ovIntro').hidden=false;};
+}
+
+function reset(){S=fresh();ang=0;vel=0;target=0;beads.splice(0).forEach(b=>b.c.remove());renderMeals();renderEat();updateGauge();drawScale();say('嗨！我是星星果小星，一起把一天的飲食放上天秤吧！');}
+/* ============ INTRO DEMO ============ */
+const DEMO={a:0,b:0,ang:0,vel:0,tgt:0,auto:true,step:0,busy:false,loads:[[],[]]};
+const SAYS=['嗨！我是星星果<b>小星</b>，今天帶你認識食物裡的 <b style="color:#2f9e62">ω-3</b> 和 <b style="color:#ec6a2c">ω-6</b>！','每樣食物都兩種都有，只是多少不同。<b>ω-6 多</b>的食物會讓天秤往右倒。','<b>ω-3 多</b>的食物，會把天秤拉回來。兩邊平衡最好！','準備好了嗎？按下面的「開始我的一天」，選出你平常吃的食物吧！'];
+let sayI=0;
+function demoSay(i){sayI=i%SAYS.length;$('demoSay').innerHTML=SAYS[sayI];}
+$('demoM').onclick=()=>{Snd.start();Snd.play('tap');const m=$('demoM');m.classList.remove('jump');void m.getBBox;m.classList.add('jump');setTimeout(()=>m.classList.remove('jump'),500);demoSay(sayI+1);};
+function demoTarget(){const r=DEMO.a<=0&&DEMO.b<=0?null:DEMO.b/Math.max(DEMO.a,.05);DEMO.tgt=r==null?0:(pos(r)-50)/50*16;}
+function demoDrop(kind,user){if(DEMO.busy)return;DEMO.busy=true;
+  const f=kind==='fry'?{e:'🍗',a:.5,b:12,side:1,t:'🍗 炸雞腿：<b style="color:#ec6a2c">ω-6 很多</b>，天秤往右倒！'}:{e:'🐟',a:6,b:3,side:0,t:'🐟 鯖魚：<b style="color:#2f9e62">ω-3 很多</b>，把天秤拉回平衡！'};
+  if(user){Snd.start();DEMO.auto=false;}
+  const el=$('dFall');el.textContent=f.e;const t0=performance.now();
+  (function fall(now){const p=Math.min(1,(now-t0)/650),e=p*p;const end=demoEnds()[f.side];
+    el.setAttribute('x',160+(end.x-160)*p);el.setAttribute('y',-10+(end.y+40)*e);
+    if(p<1){requestAnimationFrame(fall);return;}
+    el.textContent='';DEMO.a+=f.a;DEMO.b+=f.b;DEMO.loads[f.side].push(f.e);
+    document.querySelectorAll('#dPanL .load,#dPanR .load').forEach((t,i)=>t.textContent=DEMO.loads[i].slice(-3).join(''));
+    Snd.play(kind==='fry'?'sizzle':'gold');if(kind==='fry')Snd.play('bead',1,2);demoTarget();$('demoSay').innerHTML=f.t;DEMO.busy=false;})(t0);}
+function demoEnds(){const ca=Math.cos(DEMO.ang*Math.PI/180),sa=Math.sin(DEMO.ang*Math.PI/180);return[{x:160-108*ca,y:38-108*sa},{x:160+108*ca,y:38+108*sa}];}
+function demoReset(){DEMO.a=DEMO.b=0;DEMO.loads=[[],[]];document.querySelectorAll('#dPanL .load,#dPanR .load').forEach(t=>t.textContent='');demoTarget();}
+$('tryFry').onclick=()=>{Snd.start();Snd.play('tap');demoDrop('fry',true);};
+$('tryFish').onclick=()=>{Snd.start();Snd.play('tap');demoDrop('fish',true);};
+$('tryReset').onclick=()=>{Snd.start();Snd.play('tap');DEMO.auto=false;demoReset();$('demoSay').innerHTML='清空了！再放放看，讓天秤保持平衡。';};
+let dLast=performance.now();
+(function demoLoop(now){const dt=Math.min(.05,(now-dLast)/1000);dLast=now;
+  if(!$('ovIntro').hidden){DEMO.vel+=(DEMO.tgt-DEMO.ang)*dt*40;DEMO.vel*=Math.pow(.05,dt);DEMO.ang+=DEMO.vel*dt*6;
+    $('dBeam').setAttribute('transform',`rotate(${DEMO.ang} 160 38)`);const e=demoEnds();
+    $('dPanL').setAttribute('transform',`translate(${e[0].x} ${e[0].y})`);$('dPanR').setAttribute('transform',`translate(${e[1].x} ${e[1].y})`);}
+  requestAnimationFrame(demoLoop);})(dLast);
+// auto-play script: greet → fried chicken tips right → fish balances it → invite
+(function autoplay(){const seq=[[600,()=>demoSay(0)],[3000,()=>demoSay(1)],[4200,()=>demoDrop('fry')],[7200,()=>demoSay(2)],[8400,()=>demoDrop('fish')],[11400,()=>demoSay(3)],[15000,()=>{demoReset();}]];
+  let base=performance.now();function run(){if(!DEMO.auto||$('ovIntro').hidden){return;}
+    seq.forEach(([t,fn])=>setTimeout(()=>{if(DEMO.auto&&!$('ovIntro').hidden)fn();},t));setTimeout(run,16000);}
+  run();})();
+$('startBtn').onclick=()=>{Snd.start();Snd.play('tap');$('ovIntro').hidden=true;say('先選早餐！每點一樣，食物裡的 ω-3 和 ω-6 就會掉進兩邊的盤子。');};
+reset();
+})();
+</script>
+</body>
+</html>
