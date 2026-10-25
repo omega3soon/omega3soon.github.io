@@ -9,6 +9,7 @@
 <meta property="og:description" content="選出你的一天四餐，看看 ω-3 和 ω-6 天秤往哪邊倒，再用細胞時光機看看每天的習慣怎麼改變身體。">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0f4f57">
+<meta http-equiv="Cache-Control" content="no-cache">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}</style>
 <style>
@@ -61,6 +62,7 @@ p{margin:0;line-height:1.6}
 .panel{flex:none;background:var(--paper);border-top:4px solid var(--line);border-radius:20px 20px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 14px rgba(15,79,87,.08)}
 .ask{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 8px}
 .ask h2{min-width:0}
+.actions{display:flex;gap:8px;position:sticky;bottom:0;z-index:5;background:var(--paper);padding:8px 0 calc(4px + env(safe-area-inset-bottom,0px));margin-bottom:-4px}
 .ask h2{font-size:19px;color:var(--lagoon)}
 .ask span{font-size:13.5px;color:var(--ink-soft)}
 .tray{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-height:28vh;overflow-y:auto;padding:2px;-webkit-mask-image:linear-gradient(#000 88%,transparent);mask-image:linear-gradient(#000 88%,transparent);padding-bottom:18px}
@@ -219,7 +221,7 @@ p{margin:0;line-height:1.6}
     <div class="ask"><h2 id="askTitle"></h2><span id="askSub"></span></div>
     <div class="tray" id="tray"></div>
     <div class="legend"><span><i style="background:var(--w3)"></i>ω-3</span><span><i style="background:var(--w6)"></i>ω-6</span><span>長條越長，含量越多</span></div>
-    <div style="display:flex;gap:8px"><button class="go" id="cellBtn" style="flex:1;background:linear-gradient(#8fd8e6,#3fa6bd);text-shadow:0 1px 0 #1d6575;box-shadow:0 4px 0 #1d6575" hidden>🧬 細胞時光機</button><button class="go" id="goBtn" style="flex:2" disabled>吃完這餐</button></div>
+    <div class="actions"><button class="go" id="cellBtn" style="flex:1;background:linear-gradient(#8fd8e6,#3fa6bd);text-shadow:0 1px 0 #1d6575;box-shadow:0 4px 0 #1d6575" hidden>🧬 細胞時光機</button><button class="go" id="goBtn" style="flex:2" disabled>吃完這餐</button></div>
   </section>
 
   <!-- intro -->
